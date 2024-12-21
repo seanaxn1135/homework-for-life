@@ -1,6 +1,6 @@
 import React from 'react';
 import SaveStory from '../components/SaveStory';
-import { SafeAreaView, View } from 'react-native';
+import { SafeAreaView } from 'react-native';
 
 export default function AddStoryScreen() {
   const handleSaveStory = (text: string) => {
@@ -8,8 +8,8 @@ export default function AddStoryScreen() {
   };
 
   return (
-    <SafeAreaView  className="flex-1 justify-center items-center bg-background">
+    <SafeAreaView className="flex-1 bg-background">
       <SaveStory onSave={handleSaveStory} />
-    </SafeAreaView >
+    </SafeAreaView>
   );
 }
