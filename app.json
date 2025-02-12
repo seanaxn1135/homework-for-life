@@ -7,6 +7,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "scheme": "com.seanaxn1135.HomeworkForLife",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -30,9 +31,6 @@
         "projectId": "2c591cc9-62da-4db5-b060-9c0bf654b19c"
       }
     },
-    "plugins": [
-      "expo-font",
-      "expo-router"
-    ]
+    "plugins": ["expo-font", "expo-router"]
   }
 }

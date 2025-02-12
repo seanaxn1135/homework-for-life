@@ -7,6 +7,7 @@ import {
   Platform,
   Pressable,
 } from 'react-native';
+// import { saveReflection } from '../../helper/storageHelper';
 
 interface SaveStoryProps {
   onSave?: (story: string) => void;
@@ -19,7 +20,9 @@ export default function SaveStory({ onSave }: SaveStoryProps) {
 
   const isButtonDisabled = storyText.length === 0 || remainingCharacters < 0;
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    const today = new Date().toISOString().split('T')[0];
+    // await saveReflection(today, storyText);
     onSave?.(storyText);
     setStoryText('');
   };
