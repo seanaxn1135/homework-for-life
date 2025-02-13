@@ -1,25 +1,27 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { formatDate } from '../../helper/dateHelper';
+
 
 interface DailyStoryCardProps {
   date: string;
-  reflection: string;
+  story: string;
   onPress?: () => void;
 }
 
-const DailyStoryCard: React.FC<DailyStoryCardProps> = ({ date, reflection, onPress }) => {
+const DailyStoryCard: React.FC<DailyStoryCardProps> = ({ date, story, onPress }) => {
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
       <View style={styles.header}>
-        <Text style={styles.dateText}>{date}</Text>
+        <Text style={styles.dateText}>{formatDate(date)}</Text>
       </View>
       <View style={styles.body}>
       <Text
-          style={styles.reflectionText}
+          style={styles.storyText}
           numberOfLines={3}
           ellipsizeMode="tail"
         >
-          {reflection}
+          {story}
         </Text>
       </View>
     </TouchableOpacity>
@@ -50,7 +52,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingBottom: 12,
   },
-  reflectionText: {
+  storyText: {
     fontSize: 14,
     color: '#666666',
   },

@@ -12,7 +12,7 @@ export const getStories = async (): Promise<{ date: string; story: string }[]> =
   }
 };
 
-export const saveReflection = async (date: string, story: string) => {
+export const saveStory = async (date: string, story: string) => {
   try {
     const stories = await getStories();
     const updatedStories = updateStories(stories, date, story);
