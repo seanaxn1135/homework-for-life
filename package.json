@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "expo-router/entry",
   "scripts": {
-    "build:android": "eas build --platform android --profile development --local",
+    "build:android": "eas build --platform android --profile development",
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
@@ -34,7 +34,9 @@
     "react-native-screens": "~4.1.0",
     "react-native-svg": "15.8.0",
     "react-native-web": "~0.19.13",
-    "@react-native-async-storage/async-storage": "1.23.1"
+    "@react-native-async-storage/async-storage": "1.23.1",
+    "expo-file-system": "~18.0.10",
+    "expo-media-library": "~17.0.6"
   },
   "devDependencies": {
     "@babel/core": "^7.26.0",
