@@ -2,10 +2,10 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import TodayScreen from './screens/TodayScreen';
-import EntriesScreen from './screens/EntriesScreen';
-import SettingsScreen from './screens/SettingsScreen';
-import { RootTabParamList } from './navigation/types';
+import TodayScreen from './src/screens/TodayScreen';
+import EntriesScreen from './src/screens/EntriesScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
+import { RootTabParamList } from './src/navigation/types';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
