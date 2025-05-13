@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { colors } from '../theme/colors';
+import { View, StyleSheet, Text } from 'react-native'; import { colors } from '../theme/colors';
 import Button from '../components/Button';
 import InputField from '../components/InputField';
 import PromptText from '../components/PromptText';
-import DateText from '../components/DateText';
+import { formatDateToWeekdayMonthDay } from '../utils/dateUtils';
 
 const TodayScreen: React.FC = () => {
   const [entryText, setEntryText] = useState('');
@@ -14,11 +13,13 @@ const TodayScreen: React.FC = () => {
     // Add your save logic here
   };
 
+  const formattedDate = formatDateToWeekdayMonthDay(new Date());
+
   return (
     <View style={styles.container}>
       <View style={styles.contentContainer}>
         <View style={styles.promptContainer}>
-          <DateText style={styles.dateText} />
+          <Text style={styles.dateText}> {formattedDate} </Text>
           <PromptText style={styles.promptText} />
         </View>
         <InputField 
@@ -49,6 +50,11 @@ const styles = StyleSheet.create({
   },
   dateText: {
     marginBottom: 8,
+    textAlign: 'center',
+    color: colors.textSubtle,
+    fontSize: 16,
+    fontFamily: 'Palanquin',
+    lineHeight: 18
   },
   promptText: {
     marginBottom: 4,

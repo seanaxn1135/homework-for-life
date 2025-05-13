@@ -15,7 +15,6 @@ const InputField: React.FC<InputFieldProps> = ({
   value,
   onChangeText,
   style,
-  textStyle,
 }) => {
   return (
     <TextInput
@@ -34,7 +33,7 @@ const styles = StyleSheet.create({
   input: {
     width: 340,
     height: 200,
-    padding: 8,
+    padding: 16,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 12,
