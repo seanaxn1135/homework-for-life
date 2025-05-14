@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
   text: {
     color: colors.buttonPrimaryText,
     fontSize: 14,
-    fontFamily: 'Inter',
+    fontFamily: 'Inter-Medium',
     fontWeight: '500',
     lineHeight: 18,
   },

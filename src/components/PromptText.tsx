@@ -69,7 +69,6 @@ const PromptText: React.FC<PromptTextProps> = ({ text, style }) => {
           setCurrentPrompt(prompt);
         }
       } else {
-        // First time running the app
         const newPrompt = getRandomPrompt();
         const newData: StoredPromptData = {
           prompt: newPrompt,
@@ -99,7 +98,7 @@ const styles = StyleSheet.create({
   text: {
     color: colors.text,
     fontSize: 20,
-    fontFamily: 'Inter',
+    fontFamily: 'Inter-Medium',
     lineHeight: 28,
     textAlign: 'center',
   },

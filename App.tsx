@@ -1,17 +1,29 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { StatusBar } from 'react-native';
+import { Platform, StatusBar } from 'react-native';
 import TodayScreen from './src/screens/TodayScreen';
 import EntriesScreen from './src/screens/EntriesScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import { RootTabParamList } from './src/navigation/types';
 import { colors } from './src/theme/colors';
+import { useFonts } from "expo-font";
+import { Inter_400Regular, Inter_500Medium } from "@expo-google-fonts/inter";
+import { Palanquin_300Light } from "@expo-google-fonts/palanquin";
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Palanquin_300Light,
+    Inter_500Medium
+  });
+  if (!fontsLoaded) {
+    return null;
+  }
+
   return (
     <NavigationContainer>
       <StatusBar

@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: colors.textSubtle,
     fontSize: 16,
-    fontFamily: 'Palanquin',
+    fontFamily: 'Palanquin-Light',
     lineHeight: 18
   },
   promptText: {
