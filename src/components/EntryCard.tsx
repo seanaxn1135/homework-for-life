@@ -4,6 +4,7 @@ import { colors } from '../theme/colors';
 
 // Define the props for EntryCard
 export interface EntryCardProps {
+  id: string;
   date: string;
   snippet: string;
   onPress?: () => void;
@@ -41,15 +42,15 @@ const styles = StyleSheet.create({
   },
   dateText: {
     fontFamily: 'Palanquin-Light',
-    fontSize: 16,
+    fontSize: 14,
     color: colors.textSubtle,
     marginBottom: 5,
   },
   snippetText: {
     fontFamily: 'Inter-Medium',
-    fontSize: 16,
+    fontSize: 14,
     color: colors.text,
-    lineHeight: 22,
+    lineHeight: 20,
   },
 });
 
