@@ -5,21 +5,11 @@ import { colors } from '../theme/colors';
 import EntryCard from '../components/EntryCard';
 import { getEntries, Entry } from '../services/storageService';
 
-interface EntriesScreenProps {
-  testProps?: {
-    initialEntries?: Entry[];
-    isLoading?: boolean;
-  };
-}
-
-const EntriesScreen: React.FC<EntriesScreenProps> = ({ testProps }) => {
-  const [entries, setEntries] = useState<Entry[]>(testProps?.initialEntries || []);
-  const [isLoading, setIsLoading] = useState(testProps?.isLoading !== undefined ? testProps.isLoading : true);
+const EntriesScreen: React.FC = () => {
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const loadEntries = useCallback(async () => {
-    // Skip data loading in test mode
-    if (testProps) return;
-    
     setIsLoading(true);
     try {
       const fetchedEntries = await getEntries();
@@ -29,14 +19,14 @@ const EntriesScreen: React.FC<EntriesScreenProps> = ({ testProps }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [testProps]);
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
       let isMounted = true;
       
       const fetchData = async () => {
-        if (isMounted && !testProps) {
+        if (isMounted) {
           await loadEntries();
         }
       };
@@ -46,7 +36,7 @@ const EntriesScreen: React.FC<EntriesScreenProps> = ({ testProps }) => {
       return () => {
         isMounted = false;
       };
-    }, [loadEntries, testProps])
+    }, [loadEntries])
   );
 
   const handleEntryPress = (entryId: string, entryDate: string, entryText: string) => {
