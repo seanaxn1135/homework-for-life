@@ -6,12 +6,10 @@ import EntryCard from '../components/EntryCard';
 import { getEntries, Entry } from '../services/storageService';
 import EditEntryModal from '../components/EditEntryModal';
 
-const EntriesScreen: React.FC = () => {
+// Custom hook for fetching entries
+const useEntries = () => {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
-  const [modalVisible, setModalVisible] = useState<boolean>(false);
-  const [entryPosition, setEntryPosition] = useState<LayoutRectangle | null>(null);
 
   const loadEntries = useCallback(async () => {
     setIsLoading(true);
@@ -25,6 +23,7 @@ const EntriesScreen: React.FC = () => {
     }
   }, []);
 
+  // Refresh entries when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       let isMounted = true;
@@ -43,14 +42,8 @@ const EntriesScreen: React.FC = () => {
     }, [loadEntries])
   );
 
-  const handleEntryPress = (entry: Entry, layout: LayoutRectangle) => {
-    setSelectedEntry(entry);
-    setEntryPosition(layout);
-    setModalVisible(true);
-  };
-
-  const handleUpdateEntry = (updatedEntry: Entry) => {
-    // Update just the modified entry in the local state
+  // Function to update a single entry in the local state
+  const updateEntryLocally = (updatedEntry: Entry) => {
     console.log('Updating entry locally:', updatedEntry.id);
     setEntries(currentEntries => 
       currentEntries.map(entry => 
@@ -59,11 +52,43 @@ const EntriesScreen: React.FC = () => {
     );
   };
 
-  const handleCloseModal = () => {
+  return {
+    entries,
+    isLoading,
+    updateEntryLocally
+  };
+};
+
+// Custom hook for managing the edit modal
+const useEntryModal = () => {
+  const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
+  const [modalVisible, setModalVisible] = useState<boolean>(false);
+  const [entryPosition, setEntryPosition] = useState<LayoutRectangle | null>(null);
+
+  const openModal = (entry: Entry, layout: LayoutRectangle) => {
+    setSelectedEntry(entry);
+    setEntryPosition(layout);
+    setModalVisible(true);
+  };
+
+  const closeModal = () => {
     setModalVisible(false);
     setSelectedEntry(null);
     setEntryPosition(null);
   };
+
+  return {
+    selectedEntry,
+    modalVisible,
+    entryPosition,
+    openModal,
+    closeModal
+  };
+};
+
+const EntriesScreen: React.FC = () => {
+  const { entries, isLoading, updateEntryLocally } = useEntries();
+  const { selectedEntry, modalVisible, entryPosition, openModal, closeModal } = useEntryModal();
 
   // Loading state
   if (isLoading) {
@@ -95,7 +120,7 @@ const EntriesScreen: React.FC = () => {
             id={item.id}
             date={item.date}
             snippet={item.text}
-            onPress={(layout) => handleEntryPress(item, layout)}
+            onPress={(layout) => openModal(item, layout)}
           />
         )}
         keyExtractor={(item) => item.id}
@@ -106,9 +131,9 @@ const EntriesScreen: React.FC = () => {
         <EditEntryModal
           visible={modalVisible}
           entry={selectedEntry}
-          onClose={handleCloseModal}
+          onClose={closeModal}
           sourcePosition={entryPosition}
-          onEntryUpdated={handleUpdateEntry}
+          onEntryUpdated={updateEntryLocally}
         />
       )}
     </View>

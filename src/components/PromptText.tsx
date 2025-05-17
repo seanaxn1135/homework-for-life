@@ -11,15 +11,11 @@ interface StoredPromptData {
   date: string; // ISO string of the date when the prompt was set
 }
 
-interface PromptTextProps {
-  text?: string;
-  style?: any;
-}
-
-const PromptText: React.FC<PromptTextProps> = ({ text, style }) => {
-  const [currentPrompt, setCurrentPrompt] = useState<Prompt>(text as Prompt || PROMPTS[0]);
+// Custom hook to manage prompt selection and persistence
+const usePrompt = (defaultPrompt: Prompt = PROMPTS[0]) => {
+  const [currentPrompt, setCurrentPrompt] = useState<Prompt>(defaultPrompt);
   const [usedPrompts, setUsedPrompts] = useState<Prompt[]>([]);
-
+  
   const getRandomPrompt = () => {
     // If we've used all prompts, reset the used prompts list
     if (usedPrompts.length >= PROMPTS.length) {
@@ -79,13 +75,24 @@ const PromptText: React.FC<PromptTextProps> = ({ text, style }) => {
       }
     } catch (error) {
       console.error('Error loading prompt:', error);
-      setCurrentPrompt(PROMPTS[0]);
+      setCurrentPrompt(defaultPrompt);
     }
   };
 
   useEffect(() => {
     loadOrGeneratePrompt();
   }, []);
+
+  return { currentPrompt };
+};
+
+interface PromptTextProps {
+  text?: string;
+  style?: any;
+}
+
+const PromptText: React.FC<PromptTextProps> = ({ text, style }) => {
+  const { currentPrompt } = usePrompt(text as Prompt);
 
   return (
     <Text style={[styles.text, style]}>

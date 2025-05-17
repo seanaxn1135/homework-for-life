@@ -19,39 +19,11 @@ import { formatDate } from '../utils/dateUtils';
 import * as storageService from '../services/storageService';
 import { Entry } from '../services/storageService';
 
-interface EditEntryModalProps {
-  visible: boolean;
-  entry: Entry;
-  onClose: () => void;
-  sourcePosition?: LayoutRectangle | null;
-  onEntryUpdated?: (updatedEntry: Entry) => void;
-}
-
-const EditEntryModal: React.FC<EditEntryModalProps> = ({
-  visible,
-  entry,
-  onClose,
-  sourcePosition = null,
-  onEntryUpdated,
-}) => {
-  // State for text input
-  const [text, setText] = useState('');
-  const [originalText, setOriginalText] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  
-  // Animation values
+// Custom hook to handle animation logic
+const useModalAnimation = (visible: boolean, sourcePosition: LayoutRectangle | null) => {
   const { height: screenHeight, width: screenWidth } = Dimensions.get('window');
   const animateScale = useRef(new Animated.Value(0)).current;
   const animateOpacity = useRef(new Animated.Value(0)).current;
-  
-  // Update state when entry changes
-  useEffect(() => {
-    if (entry && entry.text) {
-      setText(entry.text);
-      setOriginalText(entry.text);
-    }
-  }, [entry]);
   
   // Animation effect when modal becomes visible
   useEffect(() => {
@@ -75,6 +47,112 @@ const EditEntryModal: React.FC<EditEntryModalProps> = ({
       ]).start();
     }
   }, [visible, animateScale, animateOpacity]);
+  
+  const animateClose = (onComplete: () => void) => {
+    Animated.parallel([
+      Animated.timing(animateScale, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(animateOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start(onComplete);
+  };
+  
+  // Calculate transform styles based on source position
+  const getAnimatedContentStyle = () => {
+    const scale = animateScale.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0.8, 1],
+    });
+    
+    // Center point of the modal content in screen coordinates
+    const centerX = screenWidth / 2;
+    const centerY = screenHeight / 2;
+    
+    if (sourcePosition) {
+      // Calculate the translation needed from source to center
+      const sourceX = sourcePosition.x + (sourcePosition.width / 2);
+      const sourceY = sourcePosition.y + (sourcePosition.height / 2);
+      
+      // Calculate the distance to translate during animation
+      const translateX = animateScale.interpolate({
+        inputRange: [0, 1],
+        outputRange: [sourceX - centerX, 0],
+      });
+      
+      const translateY = animateScale.interpolate({
+        inputRange: [0, 1],
+        outputRange: [sourceY - centerY, 0],
+      });
+      
+      return {
+        opacity: animateOpacity,
+        transform: [
+          { translateX },
+          { translateY },
+          { scale },
+        ],
+      };
+    }
+    
+    // Default animation if no source position - slide up from bottom
+    return {
+      opacity: animateOpacity,
+      transform: [
+        { translateY: animateScale.interpolate({
+          inputRange: [0, 1],
+          outputRange: [screenHeight * 0.2, 0],
+        })},
+        { scale },
+      ],
+    };
+  };
+  
+  // Return animation values and functions
+  return {
+    animateOpacity,
+    animateScale,
+    getAnimatedContentStyle,
+    animateClose
+  };
+};
+
+interface EditEntryModalProps {
+  visible: boolean;
+  entry: Entry;
+  onClose: () => void;
+  sourcePosition?: LayoutRectangle | null;
+  onEntryUpdated?: (updatedEntry: Entry) => void;
+}
+
+const EditEntryModal: React.FC<EditEntryModalProps> = ({
+  visible,
+  entry,
+  onClose,
+  sourcePosition = null,
+  onEntryUpdated,
+}) => {
+  // State for text input
+  const [text, setText] = useState('');
+  const [originalText, setOriginalText] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Use the custom animation hook
+  const { animateOpacity, getAnimatedContentStyle, animateClose } = useModalAnimation(visible, sourcePosition);
+  
+  // Update state when entry changes
+  useEffect(() => {
+    if (entry && entry.text) {
+      setText(entry.text);
+      setOriginalText(entry.text);
+    }
+  }, [entry]);
   
   const handleEdit = () => {
     setIsEditing(true);
@@ -144,74 +222,11 @@ const EditEntryModal: React.FC<EditEntryModalProps> = ({
       );
     } else {
       // Animate closing
-      Animated.parallel([
-        Animated.timing(animateScale, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(animateOpacity, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        onClose();
-      });
+      animateClose(onClose);
     }
   };
   
   const formattedDate = entry ? formatDate(entry.date) : '';
-  
-  // Calculate transform styles based on source position
-  const getAnimatedContentStyle = () => {
-    const scale = animateScale.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0.8, 1],
-    });
-    
-    // Center point of the modal content in screen coordinates
-    const centerX = screenWidth / 2;
-    const centerY = screenHeight / 2;
-    
-    if (sourcePosition) {
-      // Calculate the translation needed from source to center
-      const sourceX = sourcePosition.x + (sourcePosition.width / 2);
-      const sourceY = sourcePosition.y + (sourcePosition.height / 2);
-      
-      // Calculate the distance to translate during animation
-      const translateX = animateScale.interpolate({
-        inputRange: [0, 1],
-        outputRange: [sourceX - centerX, 0],
-      });
-      
-      const translateY = animateScale.interpolate({
-        inputRange: [0, 1],
-        outputRange: [sourceY - centerY, 0],
-      });
-      
-      return {
-        opacity: animateOpacity,
-        transform: [
-          { translateX },
-          { translateY },
-          { scale },
-        ],
-      };
-    }
-    
-    // Default animation if no source position - slide up from bottom
-    return {
-      opacity: animateOpacity,
-      transform: [
-        { translateY: animateScale.interpolate({
-          inputRange: [0, 1],
-          outputRange: [screenHeight * 0.2, 0],
-        })},
-        { scale },
-      ],
-    };
-  };
   
   return (
     <Modal

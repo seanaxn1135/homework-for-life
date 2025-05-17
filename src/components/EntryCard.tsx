@@ -1,7 +1,27 @@
 import React, { useRef } from 'react';
-import { View, StyleSheet, Platform, TouchableOpacity, Text, LayoutRectangle } from 'react-native';
+import { StyleSheet, Platform, TouchableOpacity, Text, LayoutRectangle } from 'react-native';
 import { colors } from '../theme/colors';
 import { formatDate } from '../utils/dateUtils';
+
+// Custom hook to handle layout measurement
+const useMeasureLayout = () => {
+  const ref = useRef<any>(null);
+  
+  const measureLayout = (callback: (layout: LayoutRectangle) => void) => {
+    if (!ref.current) return;
+    
+    ref.current.measure((x: number, y: number, width: number, height: number, pageX: number, pageY: number) => {
+      callback({
+        x: pageX,
+        y: pageY,
+        width,
+        height
+      });
+    });
+  };
+  
+  return { ref, measureLayout };
+};
 
 // Define the props for EntryCard
 export interface EntryCardProps {
@@ -20,25 +40,17 @@ const EntryCard: React.FC<EntryCardProps> = ({
 }) => {
   // Format the date to a readable format
   const formattedDate = formatDate(date);
-  const cardRef = useRef<any>(null);
+  const { ref, measureLayout } = useMeasureLayout();
 
   const handlePress = () => {
-    if (onPress && cardRef.current) {
-      // Measure the position of this card
-      cardRef.current.measure((x: number, y: number, width: number, height: number, pageX: number, pageY: number) => {
-        onPress({
-          x: pageX,
-          y: pageY,
-          width,
-          height
-        });
-      });
+    if (onPress) {
+      measureLayout(onPress);
     }
   };
   
   return (
     <TouchableOpacity 
-      ref={cardRef}
+      ref={ref}
       onPress={handlePress} 
       style={styles.cardContainer} 
       activeOpacity={0.7} 
