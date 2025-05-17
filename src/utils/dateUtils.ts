@@ -1,21 +1,24 @@
 /**
  * Base formatter to handle invalid dates and provide a consistent fallback.
- * @param date - The Date object to format.
+ * @param date - The Date object or string to format.
  * @param options - Intl.DateTimeFormatOptions for formatting.
  * @param fallbackString - String to return if the date is invalid.
  * @returns The formatted date string or the fallback string.
  */
 const formatDateWithFallback = (
-  date: Date,
+  date: Date | string,
   options: Intl.DateTimeFormatOptions,
   fallbackString: string = "" // Default fallback to empty string
 ): string => {
-  if (!(date instanceof Date) || isNaN(date.getTime())) {
+  // Convert string input to Date if needed
+  const dateObj = typeof date === "string" ? new Date(date) : date
+
+  if (!(dateObj instanceof Date) || isNaN(dateObj.getTime())) {
     console.warn("Date formatting received an invalid date:", date)
     return fallbackString
   }
   try {
-    return date.toLocaleDateString("en-US", options)
+    return dateObj.toLocaleDateString("en-US", options)
   } catch (error) {
     console.error(
       "Error formatting date:",
@@ -66,25 +69,15 @@ export const formatDateToMonthDayYear = (date: Date): string => {
  * @returns Formatted date string
  */
 export const formatDate = (date: string | Date): string => {
-  let dateObj: Date
-
-  if (date instanceof Date) {
-    dateObj = date
-  } else {
-    // Handle both ISO and YYYY-MM-DD formats
-    dateObj = new Date(date)
-  }
-
-  // Check if date is valid
-  if (isNaN(dateObj.getTime())) {
-    // Return today's date if invalid
-    dateObj = new Date()
-  }
-
-  // Format date as "Month Day, Year"
-  return dateObj.toLocaleDateString("en-US", {
-    year: "numeric",
+  const options: Intl.DateTimeFormatOptions = {
     month: "long",
     day: "numeric",
-  })
+    year: "numeric",
+  }
+
+  return formatDateWithFallback(
+    date,
+    options,
+    new Date().toLocaleDateString("en-US", options)
+  )
 }

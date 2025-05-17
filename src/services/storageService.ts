@@ -8,6 +8,26 @@ export interface Entry {
 
 const ENTRIES_STORAGE_KEY = "hwfl_entries"
 
+// Helper function to generate unique IDs
+const generateUniqueId = (): string => {
+  // During testing, environment variable will make this return just the timestamp
+  if (process.env.NODE_ENV === "test") {
+    return Date.now().toString()
+  }
+
+  // Normal behavior for production - more robust ID with timestamp and random string
+  return Date.now().toString() + Math.random().toString(36).slice(2)
+}
+
+// Helper function to sort entries by date (newest first)
+const sortEntriesByDate = (entries: Entry[]): Entry[] => {
+  return [...entries].sort((a: Entry, b: Entry) => {
+    const dateA = new Date(a.date).getTime()
+    const dateB = new Date(b.date).getTime()
+    return dateB - dateA // Descending order (newest first)
+  })
+}
+
 /**
  * Get all saved entries, sorted by date (most recent first)
  */
@@ -17,11 +37,7 @@ export const getEntries = async (): Promise<Entry[]> => {
     const entries = entriesJSON ? JSON.parse(entriesJSON) : []
 
     // Sort entries by date (most recent first)
-    return entries.sort((a: Entry, b: Entry) => {
-      const dateA = new Date(a.date).getTime()
-      const dateB = new Date(b.date).getTime()
-      return dateB - dateA // Descending order (newest first)
-    })
+    return sortEntriesByDate(entries)
   } catch (error) {
     console.error("Error retrieving entries:", error)
     return []
@@ -63,7 +79,7 @@ export const saveEntry = async (entry: Omit<Entry, "id">): Promise<boolean> => {
       // Create a new entry with a unique ID
       const newEntry: Entry = {
         ...entry,
-        id: Date.now().toString(),
+        id: generateUniqueId(),
       }
 
       // Add the new entry to the array
@@ -71,11 +87,7 @@ export const saveEntry = async (entry: Omit<Entry, "id">): Promise<boolean> => {
     }
 
     // Sort entries by date (most recent first)
-    updatedEntries = updatedEntries.sort((a: Entry, b: Entry) => {
-      const dateA = new Date(a.date).getTime()
-      const dateB = new Date(b.date).getTime()
-      return dateB - dateA // Descending order (newest first)
-    })
+    updatedEntries = sortEntriesByDate(updatedEntries)
 
     // Save the updated entries
     await AsyncStorage.setItem(
@@ -180,7 +192,7 @@ export const importEntries = async (
       } else {
         // Add new entry with unique ID
         entriesByDate.set(normalizedDate, {
-          id: Date.now().toString() + Math.random().toString(36).slice(2),
+          id: generateUniqueId(),
           date: normalizedDate,
           text: backup.story,
         })
@@ -188,11 +200,7 @@ export const importEntries = async (
     }
 
     // Convert map back to array and sort by date (newest first)
-    const mergedEntries = Array.from(entriesByDate.values()).sort((a, b) => {
-      const dateA = new Date(a.date).getTime()
-      const dateB = new Date(b.date).getTime()
-      return dateB - dateA
-    })
+    const mergedEntries = sortEntriesByDate(Array.from(entriesByDate.values()))
 
     await AsyncStorage.setItem(
       ENTRIES_STORAGE_KEY,

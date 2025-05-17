@@ -1,90 +1,13 @@
-import React, { useState, useCallback } from 'react';
+/**
+ * Screen for displaying the list of entries and handling entry editing modal.
+ * Uses custom hooks for data fetching and modal state.
+ */
+import React from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, LayoutRectangle } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../theme/colors';
 import EntryCard from '../components/EntryCard';
-import { getEntries, Entry } from '../services/storageService';
 import EditEntryModal from '../components/EditEntryModal';
-
-// Custom hook for fetching entries
-const useEntries = () => {
-  const [entries, setEntries] = useState<Entry[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-
-  const loadEntries = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const fetchedEntries = await getEntries();
-      setEntries(fetchedEntries);
-    } catch (error) {
-      console.error('Error loading entries:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Refresh entries when screen comes into focus
-  useFocusEffect(
-    useCallback(() => {
-      let isMounted = true;
-      
-      const fetchData = async () => {
-        if (isMounted) {
-          await loadEntries();
-        }
-      };
-      
-      fetchData();
-      
-      return () => {
-        isMounted = false;
-      };
-    }, [loadEntries])
-  );
-
-  // Function to update a single entry in the local state
-  const updateEntryLocally = (updatedEntry: Entry) => {
-    console.log('Updating entry locally:', updatedEntry.id);
-    setEntries(currentEntries => 
-      currentEntries.map(entry => 
-        entry.id === updatedEntry.id ? updatedEntry : entry
-      )
-    );
-  };
-
-  return {
-    entries,
-    isLoading,
-    updateEntryLocally
-  };
-};
-
-// Custom hook for managing the edit modal
-const useEntryModal = () => {
-  const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
-  const [modalVisible, setModalVisible] = useState<boolean>(false);
-  const [entryPosition, setEntryPosition] = useState<LayoutRectangle | null>(null);
-
-  const openModal = (entry: Entry, layout: LayoutRectangle) => {
-    setSelectedEntry(entry);
-    setEntryPosition(layout);
-    setModalVisible(true);
-  };
-
-  const closeModal = () => {
-    setModalVisible(false);
-    setSelectedEntry(null);
-    setEntryPosition(null);
-  };
-
-  return {
-    selectedEntry,
-    modalVisible,
-    entryPosition,
-    openModal,
-    closeModal
-  };
-};
+import { useEntries, useEntryModal } from '../hooks/useEntries';
 
 const EntriesScreen: React.FC = () => {
   const { entries, isLoading, updateEntryLocally } = useEntries();

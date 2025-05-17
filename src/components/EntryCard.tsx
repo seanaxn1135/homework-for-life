@@ -1,30 +1,10 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { StyleSheet, Platform, TouchableOpacity, Text, LayoutRectangle } from 'react-native';
 import { colors } from '../theme/colors';
 import { formatDate } from '../utils/dateUtils';
+import { useMeasureLayout } from '../hooks/useMeasureLayout';
 
-// Custom hook to handle layout measurement
-const useMeasureLayout = () => {
-  const ref = useRef<any>(null);
-  
-  const measureLayout = (callback: (layout: LayoutRectangle) => void) => {
-    if (!ref.current) return;
-    
-    ref.current.measure((x: number, y: number, width: number, height: number, pageX: number, pageY: number) => {
-      callback({
-        x: pageX,
-        y: pageY,
-        width,
-        height
-      });
-    });
-  };
-  
-  return { ref, measureLayout };
-};
-
-// Define the props for EntryCard
-export interface EntryCardProps {
+interface EntryCardProps {
   id: string;
   date: string;
   snippet: string;
@@ -38,7 +18,6 @@ const EntryCard: React.FC<EntryCardProps> = ({
   onPress, 
   testID 
 }) => {
-  // Format the date to a readable format
   const formattedDate = formatDate(date);
   const { ref, measureLayout } = useMeasureLayout();
 
@@ -99,7 +78,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.text,
     lineHeight: 20,
-    flexShrink: 1, // Allow text to shrink to fit the container
+    flexShrink: 1,
   },
 });
 

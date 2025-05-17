@@ -2,6 +2,9 @@ import React from 'react';
 import { TextInput, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 import { colors } from '../theme/colors';
 
+const INPUT_WIDTH = 340;
+const INPUT_HEIGHT = 200;
+
 interface InputFieldProps {
   text?: string;
   value?: string;
@@ -31,8 +34,8 @@ const InputField: React.FC<InputFieldProps> = ({
 
 const styles = StyleSheet.create({
   input: {
-    width: 340,
-    height: 200,
+    width: INPUT_WIDTH,
+    height: INPUT_HEIGHT,
     padding: 16,
     borderWidth: 1,
     borderColor: colors.border,
@@ -43,7 +46,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     fontWeight: '300',
     lineHeight: 18,
-    textAlign: 'justify',
+    textAlign: 'left',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,

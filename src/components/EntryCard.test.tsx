@@ -25,12 +25,8 @@ describe('EntryCard', () => {
     
     const { getByTestId } = render(<EntryCard {...mockProps} testID="entry-card" />);
     
-    // Check that we have proper configuration for text truncation
     const snippetTextElement = getByTestId('snippet-text');
     expect(snippetTextElement.props.numberOfLines).toBe(3);
     expect(snippetTextElement.props.ellipsizeMode).toBe('tail');
   });
-  
-  // The onPress test has been removed as it's better suited for E2E testing
-  // because it involves React Native's measurement API which is difficult to mock
 }); 

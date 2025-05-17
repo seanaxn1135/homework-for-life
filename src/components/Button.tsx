@@ -2,8 +2,11 @@ import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 import { colors } from '../theme/colors';
 
+const BUTTON_WIDTH = 340;
+const BUTTON_HEIGHT = 36;
+
 interface ButtonProps {
-  label?: string;
+  label: string;
   onPress?: () => void;
   style?: ViewStyle;
   textStyle?: TextStyle;
@@ -11,7 +14,7 @@ interface ButtonProps {
 }
 
 const Button: React.FC<ButtonProps> = ({ 
-  label = 'Save Moment',
+  label,
   onPress,
   style,
   textStyle,
@@ -31,8 +34,8 @@ const Button: React.FC<ButtonProps> = ({
 
 const styles = StyleSheet.create({
   button: {
-    width: 340,
-    height: 36,
+    width: BUTTON_WIDTH,
+    height: BUTTON_HEIGHT,
     paddingHorizontal: 8,
     borderRadius: 9999,
     backgroundColor: colors.primary,
