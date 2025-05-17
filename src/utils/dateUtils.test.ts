@@ -1,7 +1,8 @@
 import {
   formatDateToWeekdayMonthDay,
   formatDateToMonthDayYear,
-} from "../../src/utils/dateUtils"
+} from "./dateUtils"
+
 describe("dateUtils", () => {
   let consoleWarnSpy: jest.SpyInstance
   let consoleErrorSpy: jest.SpyInstance
