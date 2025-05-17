@@ -10,12 +10,7 @@ const ENTRIES_STORAGE_KEY = "hwfl_entries"
 
 // Helper function to generate unique IDs
 const generateUniqueId = (): string => {
-  // During testing, environment variable will make this return just the timestamp
-  if (process.env.NODE_ENV === "test") {
-    return Date.now().toString()
-  }
-
-  // Normal behavior for production - more robust ID with timestamp and random string
+  // Generate a more robust ID using timestamp and random string
   return Date.now().toString() + Math.random().toString(36).slice(2)
 }
 

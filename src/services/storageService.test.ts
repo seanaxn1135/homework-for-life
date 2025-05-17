@@ -111,13 +111,17 @@ describe("storageService", () => {
         expect.stringContaining(newEntry.text)
       )
 
-      // Verify the entry was saved with an ID that starts with the timestamp
+      // Verify the entry was saved with an ID that includes the mocked timestamp
       const savedData = JSON.parse(
         (AsyncStorage.setItem as jest.Mock).mock.calls[0][1]
       )
 
-      // Now check that ID starts with timestamp instead of exact equality
-      expect(savedData[0].id.startsWith(mockTimestamp.toString())).toBe(true)
+      // Match using regex to check that the ID is in the expected format:
+      // it should start with the timestamp (all digits) and can have other characters after
+      const idRegex = new RegExp(`^${mockTimestamp}.*$`)
+      expect(idRegex.test(savedData[0].id)).toBe(true)
+
+      // Still verify other properties exactly
       expect(savedData[0].date).toBe(newEntry.date)
       expect(savedData[0].text).toBe(newEntry.text)
     })
