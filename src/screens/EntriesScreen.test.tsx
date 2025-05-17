@@ -3,11 +3,9 @@ import { render } from '@testing-library/react-native';
 import EntriesScreen from './EntriesScreen';
 import * as storageService from '../services/storageService';
 
-// Mock the navigation hooks
+// Completely mock useFocusEffect to prevent it from running
 jest.mock('@react-navigation/native', () => ({
-  useFocusEffect: jest.fn((callback) => {
-    return undefined;
-  }),
+  useFocusEffect: jest.fn(),
 }));
 
 // Mock the storage service
@@ -20,6 +18,13 @@ describe('EntriesScreen', () => {
     jest.clearAllMocks();
   });
 
+  it('shows loading state initially', () => {
+    const { getByTestId } = render(
+      <EntriesScreen testProps={{ isLoading: true }} />
+    );
+    expect(getByTestId('loading-state')).toBeTruthy();
+  });
+
   it('displays entries correctly', () => {
     const mockEntries = [
       { id: '1', date: 'May 13, 2024', text: 'Test entry 1' },
@@ -27,9 +32,9 @@ describe('EntriesScreen', () => {
     ];
     
     const { getByText, getByTestId } = render(
-      <EntriesScreen testMode={true} initialEntries={mockEntries} />
+      <EntriesScreen testProps={{ isLoading: false, initialEntries: mockEntries }} />
     );
-
+    
     expect(getByTestId('entries-list')).toBeTruthy();
     expect(getByText('May 13, 2024')).toBeTruthy();
     expect(getByText('Test entry 1')).toBeTruthy();
@@ -39,7 +44,7 @@ describe('EntriesScreen', () => {
 
   it('displays empty state when no entries exist', () => {
     const { getByText, getByTestId } = render(
-      <EntriesScreen testMode={true} initialEntries={[]} />
+      <EntriesScreen testProps={{ isLoading: false, initialEntries: [] }} />
     );
     
     expect(getByTestId('empty-state')).toBeTruthy();

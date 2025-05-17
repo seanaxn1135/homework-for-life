@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../theme/colors';
@@ -6,19 +6,19 @@ import EntryCard from '../components/EntryCard';
 import { getEntries, Entry } from '../services/storageService';
 
 interface EntriesScreenProps {
-  testMode?: boolean;
-  initialEntries?: Entry[];
+  testProps?: {
+    initialEntries?: Entry[];
+    isLoading?: boolean;
+  };
 }
 
-const EntriesScreen: React.FC<EntriesScreenProps> = ({ 
-  testMode = false,
-  initialEntries = [] 
-}) => {
-  const [entries, setEntries] = useState<Entry[]>(testMode ? initialEntries : []);
-  const [isLoading, setIsLoading] = useState(!testMode);
+const EntriesScreen: React.FC<EntriesScreenProps> = ({ testProps }) => {
+  const [entries, setEntries] = useState<Entry[]>(testProps?.initialEntries || []);
+  const [isLoading, setIsLoading] = useState(testProps?.isLoading !== undefined ? testProps.isLoading : true);
 
   const loadEntries = useCallback(async () => {
-    if (testMode) return;
+    // Skip data loading in test mode
+    if (testProps) return;
     
     setIsLoading(true);
     try {
@@ -29,15 +29,24 @@ const EntriesScreen: React.FC<EntriesScreenProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [testMode]);
+  }, [testProps]);
 
   useFocusEffect(
     useCallback(() => {
-      if (!testMode) {
-        loadEntries();
-      }
-      return () => {};
-    }, [loadEntries, testMode])
+      let isMounted = true;
+      
+      const fetchData = async () => {
+        if (isMounted && !testProps) {
+          await loadEntries();
+        }
+      };
+      
+      fetchData();
+      
+      return () => {
+        isMounted = false;
+      };
+    }, [loadEntries, testProps])
   );
 
   const handleEntryPress = (entryId: string, entryDate: string, entryText: string) => {
