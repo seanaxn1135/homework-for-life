@@ -1,16 +1,41 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Text } from 'react-native'; import { colors } from '../theme/colors';
+import { View, StyleSheet, Text } from 'react-native';
+import { colors } from '../theme/colors';
 import Button from '../components/Button';
 import InputField from '../components/InputField';
 import PromptText from '../components/PromptText';
 import { formatDateToWeekdayMonthDay } from '../utils/dateUtils';
+import * as storageService from '../services/storageService';
 
 const TodayScreen: React.FC = () => {
   const [entryText, setEntryText] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSave = () => {
-    console.log('Save button pressed', entryText);
-    // Add your save logic here
+  const handleSave = async () => {
+    // Don't save if entry is empty
+    if (!entryText.trim()) {
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      
+      // Create entry object with current date
+      const entry = {
+        text: entryText,
+        date: new Date().toISOString(),
+      };
+      
+      // Save entry using storage service
+      await storageService.saveEntry(entry);
+      
+      // Clear the input field after successful save
+      setEntryText('');
+    } catch (error) {
+      console.error('Error saving entry:', error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const formattedDate = formatDateToWeekdayMonthDay(new Date());
@@ -25,9 +50,14 @@ const TodayScreen: React.FC = () => {
         <InputField 
           value={entryText}
           onChangeText={setEntryText}
+          text="Write your story..."
         />
         <View style={styles.buttonWrapper}>
-          <Button onPress={handleSave} />
+          <Button 
+            onPress={handleSave}
+            label="Save" 
+            style={isSaving || !entryText.trim() ? styles.disabledButton : undefined}
+          />
         </View>
       </View>
     </View>
@@ -62,6 +92,9 @@ const styles = StyleSheet.create({
   buttonWrapper: {
     marginTop: 20,
   },
+  disabledButton: {
+    opacity: 0.5,
+  }
 });
 
 export default TodayScreen;
