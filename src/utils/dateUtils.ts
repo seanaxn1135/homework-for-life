@@ -57,3 +57,34 @@ export const formatDateToMonthDayYear = (date: Date): string => {
   }
   return formatDateWithFallback(date, options)
 }
+
+/**
+ * Formats a date string or Date object to a readable format: "Month Day, Year"
+ * Example: "May 17, 2024"
+ *
+ * @param date Date string (ISO or YYYY-MM-DD) or Date object
+ * @returns Formatted date string
+ */
+export const formatDate = (date: string | Date): string => {
+  let dateObj: Date
+
+  if (date instanceof Date) {
+    dateObj = date
+  } else {
+    // Handle both ISO and YYYY-MM-DD formats
+    dateObj = new Date(date)
+  }
+
+  // Check if date is valid
+  if (isNaN(dateObj.getTime())) {
+    // Return today's date if invalid
+    dateObj = new Date()
+  }
+
+  // Format date as "Month Day, Year"
+  return dateObj.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  })
+}

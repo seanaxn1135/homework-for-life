@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, Platform, TouchableOpacity, Text } from 'react-native';
 import { colors } from '../theme/colors';
+import { formatDate } from '../utils/dateUtils';
 
 // Define the props for EntryCard
 export interface EntryCardProps {
@@ -8,13 +9,32 @@ export interface EntryCardProps {
   date: string;
   snippet: string;
   onPress?: () => void;
+  testID?: string;
 }
 
-const EntryCard: React.FC<EntryCardProps> = ({ date, snippet, onPress }) => {
+const EntryCard: React.FC<EntryCardProps> = ({ 
+  date, 
+  snippet, 
+  onPress, 
+  testID 
+}) => {
+  // Format the date to a readable format
+  const formattedDate = formatDate(date);
+  
   return (
-    <TouchableOpacity onPress={onPress} style={styles.cardContainer} activeOpacity={0.7}>
-      <Text style={styles.dateText}>{date}</Text>
-      <Text style={styles.snippetText} numberOfLines={3} ellipsizeMode="tail">
+    <TouchableOpacity 
+      onPress={onPress} 
+      style={styles.cardContainer} 
+      activeOpacity={0.7} 
+      testID={testID}
+    >
+      <Text style={styles.dateText}>{formattedDate}</Text>
+      <Text 
+        style={styles.snippetText} 
+        numberOfLines={3} 
+        ellipsizeMode="tail"
+        testID="snippet-text"
+      >
         {snippet}
       </Text>
     </TouchableOpacity>
@@ -51,6 +71,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.text,
     lineHeight: 20,
+    flexShrink: 1, // Allow text to shrink to fit the container
   },
 });
 

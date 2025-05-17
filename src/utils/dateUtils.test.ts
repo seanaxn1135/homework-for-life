@@ -1,6 +1,7 @@
 import {
   formatDateToWeekdayMonthDay,
   formatDateToMonthDayYear,
+  formatDate,
 } from "./dateUtils"
 
 describe("dateUtils", () => {
@@ -80,6 +81,50 @@ describe("dateUtils", () => {
       expect(consoleErrorSpy).toHaveBeenCalled()
 
       Date.prototype.toLocaleDateString = originalToLocaleDateString
+    })
+  })
+
+  describe("formatDate", () => {
+    it("should format ISO date strings to readable format", () => {
+      // Test ISO string date format
+      expect(formatDate("2024-05-17T10:00:17.764Z")).toBe("May 17, 2024")
+      expect(formatDate("2023-01-03T12:30:45.000Z")).toBe("January 3, 2023")
+    })
+
+    it("should format YYYY-MM-DD date strings", () => {
+      // Test simple date format
+      expect(formatDate("2024-05-17")).toBe("May 17, 2024")
+      expect(formatDate("2023-01-03")).toBe("January 3, 2023")
+    })
+
+    it("should handle Date objects", () => {
+      // Test with Date objects
+      const date1 = new Date("2024-05-17T10:00:17.764Z")
+      expect(formatDate(date1)).toBe("May 17, 2024")
+
+      const date2 = new Date("2023-01-03T12:30:45.000Z")
+      expect(formatDate(date2)).toBe("January 3, 2023")
+    })
+
+    it("should return today for invalid dates", () => {
+      // Mock current date for consistent testing
+      const realDate = Date
+      const mockDate = new Date("2024-05-20T12:00:00.000Z")
+      global.Date = class extends Date {
+        constructor() {
+          super()
+          return mockDate
+        }
+        static now() {
+          return mockDate.getTime()
+        }
+      } as DateConstructor
+
+      // Test invalid date
+      expect(formatDate("invalid-date")).toBe("May 20, 2024")
+
+      // Restore original Date
+      global.Date = realDate
     })
   })
 })

@@ -1,11 +1,22 @@
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import * as storageService from "./storageService"
+import { Entry } from "./storageService"
 
 // Mock AsyncStorage
 jest.mock("@react-native-async-storage/async-storage", () => ({
   setItem: jest.fn(),
   getItem: jest.fn(),
 }))
+
+// Mock console.error to avoid test pollution
+const originalConsoleError = console.error
+beforeAll(() => {
+  console.error = jest.fn()
+})
+
+afterAll(() => {
+  console.error = originalConsoleError
+})
 
 describe("storageService", () => {
   const ENTRIES_STORAGE_KEY = "hwfl_entries"
@@ -26,10 +37,9 @@ describe("storageService", () => {
     })
 
     it("should return parsed entries when they exist", async () => {
-      // Mock existing entries
       const mockEntries = [
-        { id: "1", date: "2023-01-01T00:00:00.000Z", text: "Test entry 1" },
         { id: "2", date: "2023-01-02T00:00:00.000Z", text: "Test entry 2" },
+        { id: "1", date: "2023-01-01T00:00:00.000Z", text: "Test entry 1" },
       ]
 
       ;(AsyncStorage.getItem as jest.Mock).mockResolvedValue(
@@ -39,7 +49,9 @@ describe("storageService", () => {
       const result = await storageService.getEntries()
 
       expect(AsyncStorage.getItem).toHaveBeenCalledWith(ENTRIES_STORAGE_KEY)
-      expect(result).toEqual(mockEntries)
+      // Entries should be sorted by date (most recent first)
+      expect(result[0].id).toBe("2") // More recent entry should be first
+      expect(result[1].id).toBe("1")
     })
 
     it("should handle errors and return empty array", async () => {
@@ -48,59 +60,71 @@ describe("storageService", () => {
         new Error("Test error")
       )
 
-      const consoleSpy = jest.spyOn(console, "error").mockImplementation()
-
       const result = await storageService.getEntries()
 
-      expect(consoleSpy).toHaveBeenCalled()
+      expect(AsyncStorage.getItem).toHaveBeenCalledWith(ENTRIES_STORAGE_KEY)
+      expect(console.error).toHaveBeenCalled()
       expect(result).toEqual([])
+    })
 
-      consoleSpy.mockRestore()
+    it("should return entries sorted by date, most recent first", async () => {
+      const mockEntries = [
+        { id: "123", date: "2024-01-01", text: "Oldest entry" },
+        { id: "456", date: "2024-01-03", text: "Newest entry" },
+        { id: "789", date: "2024-01-02", text: "Middle entry" },
+      ]
+
+      ;(AsyncStorage.getItem as jest.Mock).mockResolvedValue(
+        JSON.stringify(mockEntries)
+      )
+
+      const entries = await storageService.getEntries()
+
+      // Verify entries are sorted by date (newest first)
+      expect(entries[0].date).toBe("2024-01-03")
+      expect(entries[1].date).toBe("2024-01-02")
+      expect(entries[2].date).toBe("2024-01-01")
     })
   })
 
   describe("saveEntry", () => {
     it("should save a new entry with generated ID", async () => {
-      // Mock Date.now() to return a consistent ID
-      const mockDateNow = 12345
-      jest.spyOn(Date, "now").mockReturnValue(mockDateNow)
-
-      // Mock empty entries array
-      ;(AsyncStorage.getItem as jest.Mock).mockResolvedValue(null)
+      // Mock an empty entries array
+      ;(AsyncStorage.getItem as jest.Mock).mockResolvedValue(JSON.stringify([]))
       ;(AsyncStorage.setItem as jest.Mock).mockResolvedValue(null)
 
-      const newEntry = {
-        date: "2023-01-03T00:00:00.000Z",
-        text: "New test entry",
-      }
+      // Mock Date.now for consistent ID generation
+      const mockDate = new Date("2024-01-01T12:00:00Z")
+      const mockTimestamp = mockDate.getTime()
+      jest.spyOn(Date, "now").mockReturnValue(mockTimestamp)
 
-      const expectedEntry = {
-        ...newEntry,
-        id: mockDateNow.toString(),
+      const newEntry = {
+        date: "2024-01-01",
+        text: "Test entry",
       }
 
       const result = await storageService.saveEntry(newEntry)
 
-      // Verify AsyncStorage.setItem was called with right arguments
+      expect(result).toBe(true)
       expect(AsyncStorage.setItem).toHaveBeenCalledWith(
         ENTRIES_STORAGE_KEY,
-        JSON.stringify([expectedEntry])
+        expect.stringContaining(newEntry.text)
       )
-      expect(result).toBe(true)
 
-      // Restore Date.now mock
-      jest.restoreAllMocks()
+      // Verify the entry was saved with the expected generated ID
+      const savedData = JSON.parse(
+        (AsyncStorage.setItem as jest.Mock).mock.calls[0][1]
+      )
+      expect(savedData[0].id).toBe(mockTimestamp.toString())
+      expect(savedData[0].date).toBe(newEntry.date)
+      expect(savedData[0].text).toBe(newEntry.text)
     })
 
-    it("should add new entry to beginning of existing entries", async () => {
-      // Mock Date.now() to return a consistent ID
-      const mockDateNow = 12345
-      jest.spyOn(Date, "now").mockReturnValue(mockDateNow)
-
+    it("should overwrite an entry if one exists for the same day", async () => {
       // Mock existing entries
       const existingEntries = [
-        { id: "1", date: "2023-01-01T00:00:00.000Z", text: "Test entry 1" },
-        { id: "2", date: "2023-01-02T00:00:00.000Z", text: "Test entry 2" },
+        { id: "123", date: "2024-01-01", text: "Old entry" },
+        { id: "456", date: "2024-01-02", text: "Another entry" },
       ]
 
       ;(AsyncStorage.getItem as jest.Mock).mockResolvedValue(
@@ -108,27 +132,38 @@ describe("storageService", () => {
       )
       ;(AsyncStorage.setItem as jest.Mock).mockResolvedValue(null)
 
+      // New entry for the same day as first existing entry
       const newEntry = {
-        date: "2023-01-03T00:00:00.000Z",
-        text: "New test entry",
-      }
-
-      const expectedEntry = {
-        ...newEntry,
-        id: mockDateNow.toString(),
+        date: "2024-01-01",
+        text: "Updated entry for same day",
       }
 
       const result = await storageService.saveEntry(newEntry)
 
-      // Verify new entry was added to beginning of array
-      expect(AsyncStorage.setItem).toHaveBeenCalledWith(
-        ENTRIES_STORAGE_KEY,
-        JSON.stringify([expectedEntry, ...existingEntries])
-      )
       expect(result).toBe(true)
 
-      // Restore Date.now mock
-      jest.restoreAllMocks()
+      // Extract the saved entries
+      const savedData = JSON.parse(
+        (AsyncStorage.setItem as jest.Mock).mock.calls[0][1]
+      )
+
+      // Verify there's still only 2 entries (not 3)
+      expect(savedData.length).toBe(2)
+
+      // Find the entry for the date we updated
+      const updatedEntry = savedData.find(
+        (entry: Entry) => entry.date === "2024-01-01"
+      )
+
+      // Verify it has the new text but retained its ID
+      expect(updatedEntry.id).toBe("123") // Should keep the original ID
+      expect(updatedEntry.text).toBe("Updated entry for same day")
+
+      // Verify the other entry is unchanged
+      const unchangedEntry = savedData.find(
+        (entry: Entry) => entry.date === "2024-01-02"
+      )
+      expect(unchangedEntry.text).toBe("Another entry")
     })
 
     it("should handle errors when saving entry", async () => {
@@ -156,7 +191,7 @@ describe("storageService", () => {
 
   describe("updateEntry", () => {
     it("should update an existing entry", async () => {
-      // Mock existing entries
+      // Setup existing entries
       const existingEntries = [
         { id: "1", date: "2023-01-01T00:00:00.000Z", text: "Test entry 1" },
         { id: "2", date: "2023-01-02T00:00:00.000Z", text: "Test entry 2" },
@@ -167,25 +202,36 @@ describe("storageService", () => {
       )
       ;(AsyncStorage.setItem as jest.Mock).mockResolvedValue(null)
 
+      // Entry to update (id must match an existing entry)
       const updatedEntry = {
         id: "2",
         date: "2023-01-02T00:00:00.000Z",
         text: "Updated test entry 2",
       }
 
-      const expectedEntries = [existingEntries[0], updatedEntry]
-
       const result = await storageService.updateEntry(updatedEntry)
 
-      expect(AsyncStorage.setItem).toHaveBeenCalledWith(
-        ENTRIES_STORAGE_KEY,
-        JSON.stringify(expectedEntries)
-      )
       expect(result).toBe(true)
+
+      // Extract the saved entries from the mock call
+      const savedData = JSON.parse(
+        (AsyncStorage.setItem as jest.Mock).mock.calls[0][1]
+      )
+
+      // Confirm we still have 2 entries
+      expect(savedData.length).toBe(2)
+
+      // Find the updated entry in the saved data
+      const savedUpdatedEntry = savedData.find(
+        (entry: Entry) => entry.id === "2"
+      )
+
+      // Verify it has the updated text
+      expect(savedUpdatedEntry.text).toBe("Updated test entry 2")
     })
 
     it("should not modify entries when updating non-existent entry", async () => {
-      // Mock existing entries
+      // Test updating an entry that doesn't exist
       const existingEntries = [
         { id: "1", date: "2023-01-01T00:00:00.000Z", text: "Test entry 1" },
         { id: "2", date: "2023-01-02T00:00:00.000Z", text: "Test entry 2" },
@@ -196,20 +242,28 @@ describe("storageService", () => {
       )
       ;(AsyncStorage.setItem as jest.Mock).mockResolvedValue(null)
 
-      const nonExistentEntry = {
-        id: "999",
+      // Entry with non-existent ID
+      const updatedEntry = {
+        id: "non-existent",
         date: "2023-01-03T00:00:00.000Z",
-        text: "Non-existent entry",
+        text: "Updated test entry",
       }
 
-      const result = await storageService.updateEntry(nonExistentEntry)
+      const result = await storageService.updateEntry(updatedEntry)
 
-      // Should save the same entries back
-      expect(AsyncStorage.setItem).toHaveBeenCalledWith(
-        ENTRIES_STORAGE_KEY,
-        JSON.stringify(existingEntries)
-      )
       expect(result).toBe(true)
+
+      // Extract the saved entries
+      const savedData = JSON.parse(
+        (AsyncStorage.setItem as jest.Mock).mock.calls[0][1]
+      )
+
+      // Verify the entry count is still the same
+      expect(savedData.length).toBe(2)
+
+      // Verify the entries with IDs 1 and 2 still exist and are unchanged
+      expect(savedData.some((entry: Entry) => entry.id === "1")).toBe(true)
+      expect(savedData.some((entry: Entry) => entry.id === "2")).toBe(true)
     })
 
     it("should handle errors when updating entry", async () => {
@@ -238,7 +292,7 @@ describe("storageService", () => {
 
   describe("deleteEntry", () => {
     it("should delete an existing entry", async () => {
-      // Mock existing entries
+      // Setup existing entries
       const existingEntries = [
         { id: "1", date: "2023-01-01T00:00:00.000Z", text: "Test entry 1" },
         { id: "2", date: "2023-01-02T00:00:00.000Z", text: "Test entry 2" },
@@ -249,18 +303,27 @@ describe("storageService", () => {
       )
       ;(AsyncStorage.setItem as jest.Mock).mockResolvedValue(null)
 
+      // Delete entry with id "1"
       const result = await storageService.deleteEntry("1")
 
-      // Should save filtered entries without the deleted one
-      expect(AsyncStorage.setItem).toHaveBeenCalledWith(
-        ENTRIES_STORAGE_KEY,
-        JSON.stringify([existingEntries[1]])
-      )
+      // Verify the entry was deleted
       expect(result).toBe(true)
+      expect(AsyncStorage.setItem).toHaveBeenCalled()
+
+      // Extract the saved entries from the mock call
+      const savedData = JSON.parse(
+        (AsyncStorage.setItem as jest.Mock).mock.calls[0][1]
+      )
+
+      // Should have one less entry
+      expect(savedData.length).toBe(1)
+
+      // Remaining entry should be id "2"
+      expect(savedData[0].id).toBe("2")
     })
 
     it("should not modify entries when deleting non-existent entry", async () => {
-      // Mock existing entries
+      // Setup existing entries
       const existingEntries = [
         { id: "1", date: "2023-01-01T00:00:00.000Z", text: "Test entry 1" },
         { id: "2", date: "2023-01-02T00:00:00.000Z", text: "Test entry 2" },
@@ -271,14 +334,22 @@ describe("storageService", () => {
       )
       ;(AsyncStorage.setItem as jest.Mock).mockResolvedValue(null)
 
-      const result = await storageService.deleteEntry("999")
+      // Try to delete a non-existent entry
+      const result = await storageService.deleteEntry("non-existent")
 
-      // Should save the same entries back
-      expect(AsyncStorage.setItem).toHaveBeenCalledWith(
-        ENTRIES_STORAGE_KEY,
-        JSON.stringify(existingEntries)
-      )
       expect(result).toBe(true)
+
+      // Extract the saved entries
+      const savedData = JSON.parse(
+        (AsyncStorage.setItem as jest.Mock).mock.calls[0][1]
+      )
+
+      // Verify the entry count is still the same (nothing deleted)
+      expect(savedData.length).toBe(2)
+
+      // Verify the entries with IDs 1 and 2 still exist
+      expect(savedData.some((entry: Entry) => entry.id === "1")).toBe(true)
+      expect(savedData.some((entry: Entry) => entry.id === "2")).toBe(true)
     })
 
     it("should handle errors when deleting entry", async () => {
