@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, StyleSheet, Platform, TouchableOpacity, Text } from 'react-native';
+import React, { useRef } from 'react';
+import { View, StyleSheet, Platform, TouchableOpacity, Text, LayoutRectangle } from 'react-native';
 import { colors } from '../theme/colors';
 import { formatDate } from '../utils/dateUtils';
 
@@ -8,7 +8,7 @@ export interface EntryCardProps {
   id: string;
   date: string;
   snippet: string;
-  onPress?: () => void;
+  onPress?: (layout: LayoutRectangle) => void;
   testID?: string;
 }
 
@@ -20,10 +20,26 @@ const EntryCard: React.FC<EntryCardProps> = ({
 }) => {
   // Format the date to a readable format
   const formattedDate = formatDate(date);
+  const cardRef = useRef<any>(null);
+
+  const handlePress = () => {
+    if (onPress && cardRef.current) {
+      // Measure the position of this card
+      cardRef.current.measure((x: number, y: number, width: number, height: number, pageX: number, pageY: number) => {
+        onPress({
+          x: pageX,
+          y: pageY,
+          width,
+          height
+        });
+      });
+    }
+  };
   
   return (
     <TouchableOpacity 
-      onPress={onPress} 
+      ref={cardRef}
+      onPress={handlePress} 
       style={styles.cardContainer} 
       activeOpacity={0.7} 
       testID={testID}

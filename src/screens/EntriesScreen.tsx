@@ -1,13 +1,17 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, LayoutRectangle } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../theme/colors';
 import EntryCard from '../components/EntryCard';
 import { getEntries, Entry } from '../services/storageService';
+import EditEntryModal from '../components/EditEntryModal';
 
 const EntriesScreen: React.FC = () => {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
+  const [modalVisible, setModalVisible] = useState<boolean>(false);
+  const [entryPosition, setEntryPosition] = useState<LayoutRectangle | null>(null);
 
   const loadEntries = useCallback(async () => {
     setIsLoading(true);
@@ -39,10 +43,26 @@ const EntriesScreen: React.FC = () => {
     }, [loadEntries])
   );
 
-  const handleEntryPress = (entryId: string, entryDate: string, entryText: string) => {
-    // In a real implementation, this would navigate to a detail screen
-    // For now, just showing an alert
-    alert(`You pressed entry from: ${entryDate}\nText: ${entryText}`);
+  const handleEntryPress = (entry: Entry, layout: LayoutRectangle) => {
+    setSelectedEntry(entry);
+    setEntryPosition(layout);
+    setModalVisible(true);
+  };
+
+  const handleUpdateEntry = (updatedEntry: Entry) => {
+    // Update just the modified entry in the local state
+    console.log('Updating entry locally:', updatedEntry.id);
+    setEntries(currentEntries => 
+      currentEntries.map(entry => 
+        entry.id === updatedEntry.id ? updatedEntry : entry
+      )
+    );
+  };
+
+  const handleCloseModal = () => {
+    setModalVisible(false);
+    setSelectedEntry(null);
+    setEntryPosition(null);
   };
 
   // Loading state
@@ -75,12 +95,22 @@ const EntriesScreen: React.FC = () => {
             id={item.id}
             date={item.date}
             snippet={item.text}
-            onPress={() => handleEntryPress(item.id, item.date, item.text)}
+            onPress={(layout) => handleEntryPress(item, layout)}
           />
         )}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContentContainer}
       />
+      
+      {selectedEntry && (
+        <EditEntryModal
+          visible={modalVisible}
+          entry={selectedEntry}
+          onClose={handleCloseModal}
+          sourcePosition={entryPosition}
+          onEntryUpdated={handleUpdateEntry}
+        />
+      )}
     </View>
   );
 };

@@ -7,19 +7,22 @@ interface ButtonProps {
   onPress?: () => void;
   style?: ViewStyle;
   textStyle?: TextStyle;
+  disabled?: boolean;
 }
 
 const Button: React.FC<ButtonProps> = ({ 
   label = 'Save Moment',
   onPress,
   style,
-  textStyle
+  textStyle,
+  disabled = false,
 }) => {
   return (
     <TouchableOpacity 
-      style={[styles.button, style]} 
-      onPress={onPress}
+      style={[styles.button, style, disabled && { opacity: 0.6 }]} 
+      onPress={disabled ? undefined : onPress}
       activeOpacity={0.8}
+      disabled={disabled}
     >
       <Text style={[styles.text, textStyle]}>{label}</Text>
     </TouchableOpacity>

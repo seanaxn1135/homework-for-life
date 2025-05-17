@@ -129,3 +129,78 @@ export const deleteEntry = async (entryId: string): Promise<boolean> => {
     return false
   }
 }
+
+/**
+ * Import entries from a backup array. Merges with existing entries by date.
+ * If an entry for a date exists, updates its text. Otherwise, adds a new entry with a unique ID.
+ * @param backupItems Array of backup items to import
+ * @returns Promise<boolean> indicating success or failure
+ */
+interface BackupItem {
+  date: string // 'YYYY-MM-DD'
+  story: string
+}
+
+export const importEntries = async (
+  backupItems: BackupItem[]
+): Promise<boolean> => {
+  // Validate input
+  if (!Array.isArray(backupItems)) return false
+  if (
+    !backupItems.every(
+      (item) => typeof item.date === "string" && typeof item.story === "string"
+    )
+  )
+    return false
+  let existingEntries: Entry[]
+  try {
+    existingEntries = await getEntries()
+  } catch (error) {
+    console.error("Error retrieving entries during import:", error)
+    return false
+  }
+  try {
+    const entriesByDate = new Map<string, Entry>()
+    // Populate map with existing entries (keyed by date string)
+    for (const entry of existingEntries) {
+      // Normalize date to YYYY-MM-DD for comparison
+      const normalizedDate = new Date(entry.date).toISOString().slice(0, 10)
+      entriesByDate.set(normalizedDate, entry)
+    }
+
+    for (const backup of backupItems) {
+      const normalizedDate = new Date(backup.date).toISOString().slice(0, 10)
+      if (entriesByDate.has(normalizedDate)) {
+        // Update existing entry's text
+        const existing = entriesByDate.get(normalizedDate)!
+        entriesByDate.set(normalizedDate, {
+          ...existing,
+          text: backup.story,
+        })
+      } else {
+        // Add new entry with unique ID
+        entriesByDate.set(normalizedDate, {
+          id: Date.now().toString() + Math.random().toString(36).slice(2),
+          date: normalizedDate,
+          text: backup.story,
+        })
+      }
+    }
+
+    // Convert map back to array and sort by date (newest first)
+    const mergedEntries = Array.from(entriesByDate.values()).sort((a, b) => {
+      const dateA = new Date(a.date).getTime()
+      const dateB = new Date(b.date).getTime()
+      return dateB - dateA
+    })
+
+    await AsyncStorage.setItem(
+      ENTRIES_STORAGE_KEY,
+      JSON.stringify(mergedEntries)
+    )
+    return true
+  } catch (error) {
+    console.error("Error importing entries:", error)
+    return false
+  }
+}

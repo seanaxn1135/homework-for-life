@@ -371,4 +371,104 @@ describe("storageService", () => {
       consoleSpy.mockRestore()
     })
   })
+
+  describe("importEntries", () => {
+    const ENTRIES_STORAGE_KEY = "hwfl_entries"
+
+    beforeEach(() => {
+      jest.clearAllMocks()
+    })
+
+    it("should import new entries and add them to storage", async () => {
+      ;(AsyncStorage.getItem as jest.Mock).mockResolvedValue(JSON.stringify([]))
+      ;(AsyncStorage.setItem as jest.Mock).mockResolvedValue(null)
+
+      const backup = [
+        { date: "2024-05-01", story: "Imported story 1" },
+        { date: "2024-05-02", story: "Imported story 2" },
+      ]
+
+      const result = await storageService.importEntries(backup)
+      expect(result).toBe(true)
+      const savedData = JSON.parse(
+        (AsyncStorage.setItem as jest.Mock).mock.calls[0][1]
+      )
+      expect(savedData.length).toBe(2)
+      expect(savedData.some((e: any) => e.text === "Imported story 1")).toBe(
+        true
+      )
+      expect(savedData.some((e: any) => e.text === "Imported story 2")).toBe(
+        true
+      )
+    })
+
+    it("should update existing entries if date matches", async () => {
+      const existing = [{ id: "1", date: "2024-05-01", text: "Old story" }]
+      ;(AsyncStorage.getItem as jest.Mock).mockResolvedValue(
+        JSON.stringify(existing)
+      )
+      ;(AsyncStorage.setItem as jest.Mock).mockResolvedValue(null)
+
+      const backup = [{ date: "2024-05-01", story: "Updated story" }]
+
+      const result = await storageService.importEntries(backup)
+      expect(result).toBe(true)
+      const savedData = JSON.parse(
+        (AsyncStorage.setItem as jest.Mock).mock.calls[0][1]
+      )
+      expect(savedData.length).toBe(1)
+      expect(savedData[0].text).toBe("Updated story")
+      expect(savedData[0].id).toBe("1") // ID should be preserved
+    })
+
+    it("should merge new and existing entries correctly", async () => {
+      const existing = [{ id: "1", date: "2024-05-01", text: "Old story" }]
+      ;(AsyncStorage.getItem as jest.Mock).mockResolvedValue(
+        JSON.stringify(existing)
+      )
+      ;(AsyncStorage.setItem as jest.Mock).mockResolvedValue(null)
+
+      const backup = [
+        { date: "2024-05-01", story: "Updated story" },
+        { date: "2024-05-02", story: "New imported story" },
+      ]
+
+      const result = await storageService.importEntries(backup)
+      expect(result).toBe(true)
+      const savedData = JSON.parse(
+        (AsyncStorage.setItem as jest.Mock).mock.calls[0][1]
+      )
+      expect(savedData.length).toBe(2)
+      expect(savedData.some((e: any) => e.text === "Updated story")).toBe(true)
+      expect(savedData.some((e: any) => e.text === "New imported story")).toBe(
+        true
+      )
+    })
+
+    it("should return false and not update storage if input is not an array", async () => {
+      const result = await storageService.importEntries({} as any)
+      expect(result).toBe(false)
+      expect(AsyncStorage.setItem).not.toHaveBeenCalled()
+    })
+
+    it("should return false and not update storage if items are missing fields", async () => {
+      const backup = [
+        { date: "2024-05-01" }, // missing story
+        { story: "No date" }, // missing date
+      ]
+      const result = await storageService.importEntries(backup as any)
+      expect(result).toBe(false)
+      expect(AsyncStorage.setItem).not.toHaveBeenCalled()
+    })
+
+    it("should handle errors from AsyncStorage and return false", async () => {
+      ;(AsyncStorage.getItem as jest.Mock).mockResolvedValue(JSON.stringify([]))
+      ;(AsyncStorage.setItem as jest.Mock).mockRejectedValue(
+        new Error("AsyncStorage error")
+      )
+      const backup = [{ date: "2024-05-01", story: "Imported story" }]
+      const result = await storageService.importEntries(backup)
+      expect(result).toBe(false)
+    })
+  })
 })
