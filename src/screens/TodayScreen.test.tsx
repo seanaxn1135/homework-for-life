@@ -3,13 +3,7 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import TodayScreen from './TodayScreen';
 import * as storageService from '../services/storageService';
 
-// Mock AsyncStorage
-jest.mock('@react-native-async-storage/async-storage', () => ({
-  setItem: jest.fn().mockResolvedValue(null),
-  getItem: jest.fn().mockResolvedValue(null),
-}));
-
-// Mock the storageService
+// Mock storageService methods
 jest.mock('../services/storageService', () => ({
   saveEntry: jest.fn().mockResolvedValue(true),
 }));
@@ -32,10 +26,16 @@ describe('TodayScreen', () => {
     jest.clearAllMocks();
   });
 
-  it('should render correctly with empty input field', () => {
-    const { getByPlaceholderText, getByText } = render(<TodayScreen />);
+  it('renders correctly with date and empty input field', () => {
+    const { getByText, getByPlaceholderText } = render(<TodayScreen />);
     
+    // Verify date display
+    expect(getByText('Monday, January 1')).toBeTruthy();
+    
+    // Verify input field placeholder
     expect(getByPlaceholderText('Write your story...')).toBeTruthy();
+    
+    // Verify save button
     expect(getByText('Save')).toBeTruthy();
   });
 
@@ -48,14 +48,18 @@ describe('TodayScreen', () => {
     expect(input.props.value).toBe('My daily story');
   });
 
-  it('should call saveEntry when Save button is pressed', async () => {
+  it('should call saveEntry with correct data when Save button is pressed', async () => {
     const { getByPlaceholderText, getByText } = render(<TodayScreen />);
     const input = getByPlaceholderText('Write your story...');
     const saveButton = getByText('Save');
     
+    // Type text in the input field
     fireEvent.changeText(input, 'Test story entry');
+    
+    // Press the save button
     fireEvent.press(saveButton);
     
+    // Verify storageService.saveEntry was called with correct data
     await waitFor(() => {
       expect(storageService.saveEntry).toHaveBeenCalledWith({
         text: 'Test story entry',
@@ -69,9 +73,13 @@ describe('TodayScreen', () => {
     const input = getByPlaceholderText('Write your story...');
     const saveButton = getByText('Save');
     
+    // Type text in the input field
     fireEvent.changeText(input, 'Test story entry');
+    
+    // Press the save button
     fireEvent.press(saveButton);
     
+    // Verify input is cleared after successful save
     await waitFor(() => {
       expect(input.props.value).toBe('');
     });
@@ -81,8 +89,32 @@ describe('TodayScreen', () => {
     const { getByText } = render(<TodayScreen />);
     const saveButton = getByText('Save');
     
+    // Press save button with empty input
     fireEvent.press(saveButton);
     
+    // Verify saveEntry was not called
     expect(storageService.saveEntry).not.toHaveBeenCalled();
+  });
+
+  it('should handle saveEntry failure gracefully', async () => {
+    // Mock saveEntry to fail for this test
+    (storageService.saveEntry as jest.Mock).mockRejectedValueOnce(new Error('Save failed'));
+    
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+    
+    const { getByPlaceholderText, getByText } = render(<TodayScreen />);
+    const input = getByPlaceholderText('Write your story...');
+    const saveButton = getByText('Save');
+    
+    // Type text and press save
+    fireEvent.changeText(input, 'Test story entry');
+    fireEvent.press(saveButton);
+    
+    // Verify error is logged
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalled();
+    });
+    
+    consoleSpy.mockRestore();
   });
 }); 
